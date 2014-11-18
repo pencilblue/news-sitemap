@@ -31,29 +31,38 @@ var PARALLEL_LIMIT = 2;
 
 NewsSitemap.prototype.render = function(cb) {
 	var self = this;
+	var dao   = new pb.DAO();
+	var today = new Date();
 
-	this.ts.registerLocal('urls', function(flag, cb) {
-		var dao   = new pb.DAO();
-		var today = new Date();
-		var tasks = [
-			function(callback) {
-				dao.query('article', {publish_date: {$lte: today}, draft: {$ne: 1}}).then(function(articles) {
-					self.processObjects(articles, callback);
-				});
-			},
-		];
-		async.parallelLimit(tasks, 2, function(err, htmlParts) {
-			cb(err, new pb.TemplateValue(htmlParts.join(''), false));
+	var options = {
+		where: {
+			publish_date: {$lte: today},
+			draft: {$ne: 1}
+		},
+		select: {
+			publish_date: 1,
+			headline: 1,
+			sub_heading: 1,
+			article_topics: 1,
+			meta_keywords: 1,
+			meta_desc: 1,
+			meta_title: 1
+		}
+	}
+
+	dao.q('article', options, function(err, articles) {
+		self.processObjects(articles, function(err, urls) {
+			self.ts.registerLocal('urls', new pb.TemplateValue(urls, false));
+			self.ts.load('xml_feeds/news_sitemap', function(err, content) {
+				var data = {
+					content: content,
+					headers: {
+						'Access-Control-Allow-Origin': '*'
+					}
+				};
+				cb(data);
+			});
 		});
-	});
-	this.ts.load('xml_feeds/news_sitemap', function(err, content) {
-		var data = {
-			content: content,
-			headers: {
-				'Access-Control-Allow-Origin': '*'
-			}
-		};
-		cb(data);
 	});
 };
 
@@ -72,7 +81,7 @@ NewsSitemap.prototype.processObjects = function(objArray, cb) {
 			});
 		};
 	});
-	async.series(tasks, function(err, results) {
+	async.parallelLimit(tasks, PARALLEL_LIMIT, function(err, results) {
 		cb(err, results.join(''));
 	});
 };
