@@ -1,0 +1,31 @@
+{
+	"uid": "news-sitemap",
+	"name": "Google News Sitemap Plugin",
+	"description": "Adds a Google News sitemap to the site.",
+	"version": "0.1.0",
+	"author": {
+		"name": "PencilBlue",
+		"email": "info@pencilblue.org",
+		"website": "http://pencilblue.org",
+		"contributors": [
+			{
+				"name": "Blake Callens",
+				"email": ""
+			},
+			{
+				"name": "Brian Hyder",
+				"email": ""
+			}
+		]
+	},
+	"settings": [],
+	"permissions": {
+		"ACCESS_USER": [],
+		"ACCESS_WRITER": [],
+		"ACCESS_EDITOR": [],
+		"ACCESS_MANAGING_EDITOR": []
+	},
+	"main_module": {
+		"path": "news-sitemap.js"
+	}
+}
