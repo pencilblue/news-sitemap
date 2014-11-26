@@ -46,7 +46,8 @@ NewsSitemap.prototype.render = function(cb) {
 			article_topics: 1,
 			meta_keywords: 1,
 			meta_desc: 1,
-			meta_title: 1
+			meta_title: 1,
+			url: 1
 		}
 	}
 
