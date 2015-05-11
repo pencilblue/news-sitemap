@@ -52,7 +52,8 @@ module.exports = function(pb) {
                 meta_desc: 1,
                 meta_title: 1,
                 url: 1
-            }
+            },
+            order: {publish_date: pb.DAO.DESC}
         }
 
         dao.q('article', options, function(err, articles) {
@@ -77,12 +78,12 @@ module.exports = function(pb) {
         var tasks = util.getTasks(objArray, function(objArray, i) {
             return function(callback) {
                 var articleService = new pb.ArticleService();
-                articleService.getMetaInfo(objArray[i], function(metaKeywords, metaDescription, metaTitle) {
+                articleService.getMetaInfo(objArray[i], function(err, meta) {
                     var ts = new pb.TemplateService(self.ls);
                     ts.registerLocal('url', '/article/' + objArray[i].url);
                     ts.registerLocal('publish_date', self.getPublishDate(objArray[i].publish_date));
-                    ts.registerLocal('headline', metaTitle);
-                    ts.registerLocal('keywords', metaKeywords);
+                    ts.registerLocal('headline', meta.title);
+                    ts.registerLocal('keywords', meta.keywords);
                     ts.load('xml_feeds/news_sitemap/url', callback);
                 });
             };
