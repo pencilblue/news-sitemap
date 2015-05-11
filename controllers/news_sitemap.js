@@ -73,11 +73,12 @@ module.exports = function(pb) {
 
     NewsSitemap.prototype.processObjects = function(objArray, cb) {
         var self = this;
-        var ts   = new pb.TemplateService(this.ls);
 
         var tasks = util.getTasks(objArray, function(objArray, i) {
             return function(callback) {
-                ArticleService.getMetaInfo(objArray[i], function(metaKeywords, metaDescription, metaTitle) {
+                var articleService = new pb.ArticleService();
+                articleService.getMetaInfo(objArray[i], function(metaKeywords, metaDescription, metaTitle) {
+                    var ts = new pb.TemplateService(self.ls);
                     ts.registerLocal('url', '/article/' + objArray[i].url);
                     ts.registerLocal('publish_date', self.getPublishDate(objArray[i].publish_date));
                     ts.registerLocal('headline', metaTitle);
