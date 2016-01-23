@@ -19,21 +19,41 @@
 var async = require('async');
 
 module.exports = function(pb) {
-    
+
     //pb dependencies
-    var util           = pb.util;
-    var ArticleService = pb.ArticleService;
-    
+    var util = pb.util;
+    var ArticleServiceV2 = pb.ArticleServiceV2;
+    var SiteMapService = pb.SiteMapService;
+
     /**
      * Google News sitemap
      */
-    function NewsSitemap(){}
-    util.inherits(NewsSitemap, pb.BaseController);
+    function NewsSitemapController(){}
+    util.inherits(NewsSitemapController, pb.BaseController);
 
-    //constants
-    var PARALLEL_LIMIT = 2;
+    /**
+     * Initializes the controller
+     * @method init
+     * @param {Object} context
+     * @param {Function} cb
+     */
+    NewsSitemapController.prototype.init = function(context, cb) {
+        var self = this;
+        var init = function(err) {
 
-    NewsSitemap.prototype.render = function(cb) {
+            //build dependencies for site map service
+            self.dao = new pb.SiteQueryService({site: context.site, onlyThisSite: context.onlyThisSite});
+
+            cb(err, true);
+        };
+        NewsSitemapController.super_.prototype.init.apply(this, [context, init]);
+    };
+
+    /**
+     * Builds the news feed
+     * @method render
+     */
+    NewsSitemapController.prototype.render = function(cb) {
         var self = this;
         var dao   = new pb.DAO();
         var today = new Date();
@@ -56,7 +76,7 @@ module.exports = function(pb) {
             order: {publish_date: pb.DAO.DESC}
         }
 
-        dao.q('article', options, function(err, articles) {
+        self.dao.q('article', options, function(err, articles) {
             self.processObjects(articles, function(err, urls) {
                 self.ts.registerLocal('urls', new pb.TemplateValue(urls, false));
                 self.ts.load('xml_feeds/news_sitemap', function(err, content) {
@@ -72,41 +92,43 @@ module.exports = function(pb) {
         });
     };
 
-    NewsSitemap.prototype.processObjects = function(objArray, cb) {
+    /**
+     * Handles serializing each individual article
+     * @method processObjects
+     * @param {Array} objArray
+     * @param {Function} cb
+     */
+    NewsSitemapController.prototype.processObjects = function(objArray, cb) {
         var self = this;
 
+        var parentTs = self.ts;
         var tasks = util.getTasks(objArray, function(objArray, i) {
             return function(callback) {
-                var articleService = new pb.ArticleService();
+                var articleService = new ArticleServiceV2(self.getServiceContext());
                 articleService.getMetaInfo(objArray[i], function(err, meta) {
-                    var ts = new pb.TemplateService(self.ls);
+                    if (util.isError(err)) {
+                        return callback(err);
+                    }
+                    var ts = parentTs.getChildInstance();
                     ts.registerLocal('url', '/article/' + objArray[i].url);
-                    ts.registerLocal('publish_date', self.getPublishDate(objArray[i].publish_date));
+                    ts.registerLocal('publish_date', SiteMapService.getLastModDateStr(objArray[i].publish_date));
                     ts.registerLocal('headline', meta.title);
                     ts.registerLocal('keywords', meta.keywords);
                     ts.load('xml_feeds/news_sitemap/url', callback);
                 });
             };
         });
-        async.parallelLimit(tasks, PARALLEL_LIMIT, function(err, results) {
+        async.parallel(tasks, function(err, results) {
             cb(err, results.join(''));
         });
     };
 
-    NewsSitemap.prototype.getPublishDate = function(date) {
-        var month = date.getMonth() + 1;
-        if(month < 10) {
-            month = '0' + month;
-        }
-        var day = date.getDate();
-        if(day < 10) {
-            day = '0' + day;
-        }
-
-        return date.getFullYear() + '-' + month + '-' + day;
-    };
-
-    NewsSitemap.getRoutes = function(cb) {
+    /**
+     * @static
+     * @method getRoutes
+     * @param {Function} cb
+     */
+    NewsSitemapController.getRoutes = function(cb) {
         var routes = [
             {
                 method: 'get',
@@ -119,5 +141,5 @@ module.exports = function(pb) {
     };
 
     //exports
-    return NewsSitemap;
+    return NewsSitemapController;
 };

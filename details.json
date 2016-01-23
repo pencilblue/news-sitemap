@@ -2,8 +2,8 @@
 	"uid": "news-sitemap",
 	"name": "Google News Sitemap Plugin",
 	"description": "Adds a Google News sitemap to the site.",
-	"version": "0.2.0",
-    "pb_version": "0.4.x",
+	"version": "0.2.1",
+    "pb_version": "0.5.x",
 	"author": {
 		"name": "PencilBlue",
 		"email": "info@pencilblue.org",
