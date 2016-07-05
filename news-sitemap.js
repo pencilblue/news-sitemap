@@ -1,5 +1,5 @@
 /*
-    Copyright (C) 2015  PencilBlue, LLC
+    Copyright (C) 2016  PencilBlue, LLC
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -14,16 +14,16 @@
     You should have received a copy of the GNU General Public License
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
+'use strict';
 
-module.exports = function(pb) {
+module.exports = function(/*pb*/) {
 
     /**
-    * NewsSitemap - Adds a Google News sitemap to the site.
-    *
-    * @author Blake Callens <blake@pencilblue.org>
-    * @copyright 2014 PencilBlue, LLC
+    * NewsSiteMap - Adds a Google News site-map to the site.
+    * @class NewsSiteMap
+    * @constructor
     */
-    function NewsSitemap(){}
+    function NewsSiteMap(){}
 
     /**
      * Called when the application is being installed for the first time.
@@ -34,7 +34,7 @@ module.exports = function(pb) {
      * @param {Function} cb A callback that must be called upon completion.  cb(Error, Boolean).
      * The result should be TRUE on success and FALSE on failure
      */
-    NewsSitemap.onInstallWithContext  = function(context, cb) {
+    NewsSiteMap.onInstallWithContext  = function(context, cb) {
         cb(null, true);
     };
 
@@ -46,10 +46,10 @@ module.exports = function(pb) {
      * @method onUninstallWithContext
      * @param {Object} context
      * @param {Object} context.site
-     * @param {Function} cb A callback that must be called upon completion.  cb(Error, Boolean).
+     * @param {Function} cb (Error, boolean) A callback that must be called upon completion.  cb(Error, Boolean).
      * The result should be TRUE on success and FALSE on failure
      */
-    NewsSitemap.onUninstallWithContext = function(context, cb) {
+    NewsSiteMap.onUninstallWithContext = function(context, cb) {
         cb(null, true);
     };
 
@@ -57,12 +57,14 @@ module.exports = function(pb) {
      * Called when the application is starting up. The function is also called at
      * the end of a successful install. It is guaranteed that all core PB services
      * will be available including access to the core DB.
-     *
-     * @param context
-     * @param cb A callback that must be called upon completion.  cb(Error, Boolean).
+     * @static
+     * @method onStartupWithContext
+     * @param {object} context
+     * @param {string} context.site
+     * @param cb (Error, boolean) A callback that must be called upon completion.  cb(Error, Boolean).
      * The result should be TRUE on success and FALSE on failure
      */
-    NewsSitemap.onStartupWithContext = function (context, cb) {
+    NewsSiteMap.onStartupWithContext = function (context, cb) {
         cb(null, true);
     };
 
@@ -74,10 +76,10 @@ module.exports = function(pb) {
      * @param {Function} cb A callback that must be called upon completion.  cb(err, result).
      * The result is ignored
      */
-    NewsSitemap.onShutdown = function(cb) {
+    NewsSiteMap.onShutdown = function(cb) {
         cb(null, true);
     };
 
     //exports
-    return NewsSitemap;
+    return NewsSiteMap;
 };

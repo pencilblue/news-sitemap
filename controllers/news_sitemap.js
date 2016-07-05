@@ -1,5 +1,5 @@
 /*
-	Copyright (C) 2015  PencilBlue, LLC
+	Copyright (C) 2016  PencilBlue, LLC
 
 	This program is free software: you can redistribute it and/or modify
 	it under the terms of the GNU General Public License as published by
@@ -14,6 +14,7 @@
 	You should have received a copy of the GNU General Public License
 	along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
+'use strict';
 
 //dependencies
 var async = require('async');
@@ -26,42 +27,37 @@ module.exports = function(pb) {
     var SiteMapService = pb.SiteMapService;
 
     /**
-     * Google News sitemap
+     * Google News site-map
+     * @class NewsSiteMapController
+     * @constructor
      */
-    function NewsSitemapController(){}
-    util.inherits(NewsSitemapController, pb.BaseController);
+    function NewsSiteMapController(){}
+    util.inherits(NewsSiteMapController, pb.BaseController);
 
     /**
      * Initializes the controller
-     * @method init
+     * @method initSync
      * @param {Object} context
-     * @param {Function} cb
      */
-    NewsSitemapController.prototype.init = function(context, cb) {
-        var self = this;
-        var init = function(err) {
+    NewsSiteMapController.prototype.initSync = function(/*context*/) {
 
-            //build dependencies for site map service
-            self.dao = new pb.SiteQueryService({site: context.site, onlyThisSite: context.onlyThisSite});
-
-            cb(err, true);
-        };
-        NewsSitemapController.super_.prototype.init.apply(this, [context, init]);
+        /**
+         * @property service
+         * @type {ArticleServiceV2}
+         */
+        this.service = new ArticleServiceV2(this.getServiceContext());
     };
 
     /**
      * Builds the news feed
      * @method render
      */
-    NewsSitemapController.prototype.render = function(cb) {
+    NewsSiteMapController.prototype.render = function(cb) {
         var self = this;
-        var dao   = new pb.DAO();
-        var today = new Date();
 
         var options = {
             where: {
-                publish_date: {$lte: today},
-                draft: {$ne: 1}
+                publish_date: {$lte: new Date()}
             },
             select: {
                 publish_date: 1,
@@ -73,22 +69,34 @@ module.exports = function(pb) {
                 meta_title: 1,
                 url: 1
             },
-            order: {publish_date: pb.DAO.DESC}
-        }
+            order: [['publish_date', pb.DAO.DESC]]
+        };
 
-        self.dao.q('article', options, function(err, articles) {
-            self.processObjects(articles, function(err, urls) {
+        var tasks = [
+
+            util.wrapTask(this.service, this.service.getPublished, [options]),
+
+            function(articles, callback) {
+                self.processObjects(articles, callback);
+            },
+
+            function(urls, callback) {
                 self.ts.registerLocal('urls', new pb.TemplateValue(urls, false));
-                self.ts.load('xml_feeds/news_sitemap', function(err, content) {
-                    var data = {
-                        content: content,
-                        headers: {
-                            'Access-Control-Allow-Origin': '*'
-                        }
-                    };
-                    cb(data);
-                });
-            });
+                self.ts.load('xml_feeds/news_sitemap', callback);
+            },
+
+            function(content, callback) {
+                var data = {
+                    content: content,
+                    headers: {
+                        'Access-Control-Allow-Origin': '*'
+                    }
+                };
+                callback(null, data);
+            }
+        ];
+        async.waterfall(tasks, function(err, data) {
+            cb(err || data);
         });
     };
 
@@ -98,7 +106,7 @@ module.exports = function(pb) {
      * @param {Array} objArray
      * @param {Function} cb
      */
-    NewsSitemapController.prototype.processObjects = function(objArray, cb) {
+    NewsSiteMapController.prototype.processObjects = function(objArray, cb) {
         var self = this;
 
         var parentTs = self.ts;
@@ -128,7 +136,7 @@ module.exports = function(pb) {
      * @method getRoutes
      * @param {Function} cb
      */
-    NewsSitemapController.getRoutes = function(cb) {
+    NewsSiteMapController.getRoutes = function(cb) {
         var routes = [
             {
                 method: 'get',
@@ -141,5 +149,5 @@ module.exports = function(pb) {
     };
 
     //exports
-    return NewsSitemapController;
+    return NewsSiteMapController;
 };
